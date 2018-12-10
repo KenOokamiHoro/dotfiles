@@ -168,11 +168,13 @@ func SetTitle()
 		call append(line(".")+6, "#include <iostream>")
 		call append(line(".")+7, "int main(){")
                 call append(line(".")+8, "     ")
-                call append(line(".")+9, "    }")
+                call append(line(".")+9, "}")
 	endif
 	if &filetype == 'c'
-		call append(line(".")+6, "#include<stdio.h>")
-		call append(line(".")+7, "")
+		call append(line(".")+6, "#include <stdio.h>")
+                call append(line(".")+7, "int main(){")
+                call append(line(".")+8, "     ")
+                call append(line(".")+9, "}")
 	endif
 	if expand("%:e") == 'h'
 		call append(line(".")+6, "#ifndef _".toupper(expand("%:r"))."_H")
@@ -239,7 +241,7 @@ func! CompileRunGcc()
 	elseif &filetype == 'sh'
 		:!time bash %
 	elseif &filetype == 'python'
-		exec "!time python2.7 %"
+		exec "!time python %"
     elseif &filetype == 'html'
         exec "!firefox % &"
     elseif &filetype == 'go'
@@ -269,7 +271,7 @@ func FormartSrc()
     if &filetype == 'c'
         exec "!astyle --suffix=none %"
     elseif &filetype == 'cpp' || &filetype == 'hpp'
-        exec "!astyle --suffix=none %"
+        exec "!clang-format -style=\"{BasedOnStyle: LLVM, IndentWidth: 4}\" %"
     elseif &filetype == 'perl'
         exec "!astyle --style=gnu --suffix=none %"
     elseif &filetype == 'py'||&filetype == 'python'

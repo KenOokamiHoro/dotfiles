@@ -1,5 +1,6 @@
+# vim:se ft=zsh:
 TRAPTERM () { exit }
-update () { . $_zdir/.zshrc }
+function update () { . $_zdir/.zshrc }
 if (( $+commands[vimtrace] )); then
   (( $+commands[strace] )) && alias strace='vimtrace strace'
   (( $+commands[ltrace] )) && alias ltrace='vimtrace ltrace'

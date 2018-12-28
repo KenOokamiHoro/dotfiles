@@ -1,0 +1,3 @@
+/vim/.vim/swap
+/ssh/.ssh/*
+!/ssh/.ssh/config

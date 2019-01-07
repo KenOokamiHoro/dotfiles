@@ -26,16 +26,14 @@ fi
 zmodload zsh/regex 2>/dev/null && _has_re=1 || _has_re=0
 unsetopt nomatch
 zmodload zsh/subreap 2>/dev/null && subreap
+
 # 选项设置{{{1
 unsetopt beep
-# 不需要打 cd，直接进入目录
-setopt autocd
 # 自动记住已访问目录栈
 setopt auto_pushd
+# don't push the same dir twice.
 setopt pushd_ignore_dups
 setopt pushd_minus
-# rm * 时不要提示
-setopt rm_star_silent
 # 允许在交互模式中使用注释
 setopt interactive_comments
 # disown 后自动继续进程
@@ -54,75 +52,46 @@ setopt ksh_option_print
 setopt no_bg_nice
 setopt noflowcontrol
 stty -ixon # 上一行在 tmux 中不起作用
+
 # 历史记录{{{2
 # 不保存重复的历史记录项
 setopt hist_save_no_dups
 setopt hist_ignore_dups
-# setopt hist_ignore_all_dups
 # 在命令前添加空格，不将此命令添加到记录文件中
 setopt hist_ignore_space
-
 # append history list to the history file; this is the default but we make sure
 # because it's required for share_history.
 setopt append_history
-
 # import new commands from the history file also in other zsh-session
 setopt share_history
-
 # save each command's beginning timestamp and the duration to the history file
 setopt extended_history
-
 # If a new command line being added to the history list duplicates an older
 # one, the older command is removed from the list
 setopt histignorealldups
-
-# remove command lines from the history list when the first character on the
-# line is a space
-setopt histignorespace
-
-# if a command is issued that can't be executed as a normal command, and the
-# command is the name of a directory, perform the cd command to that directory.
-setopt auto_cd
-
 # in order to use #, ~ and ^ for filename generation grep word
 # *~(*.gz|*.bz|*.bz2|*.zip|*.Z) -> searches for word not in compressed files
 # don't forget to quote '^', '~' and '#'!
 setopt extended_glob
-
 # display PID when suspending processes as well
 setopt longlistjobs
-
 # report the status of backgrounds jobs immediately
 setopt notify
-
 # whenever a command completion is attempted, make sure the entire command path
 # is hashed first.
 setopt hash_list_all
-
 # not just at the end
 setopt completeinword
-
 # Don't send SIGHUP to background processes when the shell exits.
 setopt nohup
-
-# make cd push the old directory onto the directory stack.
-setopt auto_pushd
-
 # avoid "beep"ing
 setopt nobeep
-
-# don't push the same dir twice.
-setopt pushd_ignore_dups
-
 # * shouldn't match dotfiles. ever.
 setopt noglobdots
-
 # use zsh style word splitting
 setopt noshwordsplit
-
 # don't error out when unset parameters are used
 setopt unset
-
 # zsh 4.3.6 doesn't have this option
 setopt hist_fcntl_lock 2>/dev/null
 if [[ $_has_re -eq 1 && 
@@ -139,29 +108,21 @@ zstyle ':completion:*:processes' command 'ps -afu$USER'
 zstyle ':completion:*:*:*:*:processes' force-list always
 # 进程名补全
 zstyle ':completion:*:processes-names' command  'ps c -u ${USER} -o command | uniq'
-
 # 警告显示为红色
 zstyle ':completion:*:warnings' format $'\e[01;31m -- No Matches Found --\e[0m'
 # 描述显示为淡色
 zstyle ':completion:*:descriptions' format $'\e[2m -- %d --\e[0m'
 zstyle ':completion:*:corrections' format $'\e[01;33m -- %d (errors: %e) --\e[0m'
-
 # cd 补全顺序
 zstyle ':completion:*:-tilde-:*' group-order 'named-directories' 'path-directories' 'users' 'expand'
 # 在 .. 后不要回到当前目录
 zstyle ':completion:*:cd:*' ignore-parents parent pwd
-
 # complete manual by their section, from grml
 zstyle ':completion:*:manuals'    separate-sections true
 zstyle ':completion:*:manuals.*'  insert-sections   true
-
 zstyle ':completion:*' menu select
 # 分组显示
 zstyle ':completion:*' group-name ''
-# 歧义字符加粗（使用「true」来加下划线）；会导致原本的高亮失效
-# http://www.thregr.org/~wavexx/rnd/20141010-zsh_show_ambiguity/
-# zstyle ':completion:*' show-ambiguity '1;37'
-# _extensions 为 *. 补全扩展名
 # 在最后尝试使用文件名
 if [[ $ZSH_VERSION =~ '^[0-4]\.' || $ZSH_VERSION =~ '^5\.0\.[0-5]' ]]; then
   zstyle ':completion:*' completer _complete _match _approximate _expand_alias _ignored _files
@@ -177,25 +138,9 @@ zstyle ':completion:*' use-cache on
 _cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh
 zstyle ':completion:*' cache-path $_cache_dir
 unset _cache_dir
-
 # complete user-commands for git-*
 # https://pbrisbin.com/posts/deleting_git_tags_with_style/
 zstyle ':completion:*:*:git:*' user-commands ${${(M)${(k)commands}:#git-*}/git-/}
-
-compdef pkill=killall
-compdef pgrep=killall
-compdef proxychains=command
-compdef watch=command
-compdef rlwrap=command
-compdef ptyless=command
-compdef grc=command
-compdef agg=ag 2>/dev/null
-compdef rgg=rg 2>/dev/null
-compdef downgrade=pactree 2>/dev/null
-# not only pdf files
-compdef -d evince
-compdef _gnu_generic exa pamixer
-compdef whoneeds=pactree 2>/dev/null
 
 # Auto complete from lilydjwg {{{2
 zstyle ':completion:*:*:pdf2png:*' file-patterns \
@@ -205,8 +150,6 @@ zstyle ':completion:*:*:x:*' file-patterns \
 zstyle ':completion:*:*:evince:*' file-patterns \
   '*.{pdf,ps,eps,dvi,djvu,pdf.gz,ps.gz,dvi.gz}:documents:documents *(-/):directories:directories'
 zstyle ':completion:*:*:gbkunzip:*' file-patterns '*.zip:zip-files:zip\ files *(-/):directories:directories'
-zstyle ':completion:*:*:flashplayer:*' file-patterns '*.swf'
-zstyle ':completion:*:*:hp2ps:*' file-patterns '*.hp'
 zstyle ':completion:*:*:feh:*' file-patterns '*.{png,gif,jpg,svg}:images:images *(-/):directories:directories'
 zstyle ':completion:*:*:sxiv:*' file-patterns '*.{png,gif,jpg}:images:images *(-/):directories:directories'
 zstyle ':completion:*:*:timidity:*' file-patterns '*.mid'
@@ -228,9 +171,6 @@ zstyle ':completion:*:default'         list-colors ${(s.:.)LS_COLORS}
 
 # format on completion
 zstyle ':completion:*:descriptions'    format $'%{\e[0;31m%}completing %B%d%b%{\e[0m%}'
-
-# automatically complete 'cd -<tab>' and 'cd -<ctrl-d>' with menu
-# zstyle ':completion:*:*:cd:*:directory-stack' menu yes select
 
 # insert all expansions for expand completer
 zstyle ':completion:*:expand:*'        tag-order all-expansions
@@ -303,7 +243,6 @@ zstyle ':completion:*:sudo:*' command-path /usr/local/sbin \
                                           /usr/bin        \
                                           /sbin           \
                                           /bin            \
-                                          /usr/X11R6/bin
 
 # provide .. as a completion
 zstyle ':completion:*' special-dirs ..
@@ -349,7 +288,7 @@ if [[ ${GRML_COMP_CACHING:-yes} == yes ]]; then
   zstyle ':completion:*:complete:*' cache-path "${GRML_COMP_CACHE_DIR}"
 fi
 
-# host completion
+# host completion {{2
 [[ -r ~/.ssh/config ]] && _ssh_config_hosts=(${${(s: :)${(ps:\t:)${${(@M)${(f)"$(<$HOME/.ssh/config)"}:#Host *}#Host }}}:#*[*?]*}) || _ssh_config_hosts=()
 [[ -r ~/.ssh/known_hosts ]] && _ssh_hosts=(${${${${(f)"$(<$HOME/.ssh/known_hosts)"}:#[\|]*}%%\ *}%%,*}) || _ssh_hosts=()
 [[ -r /etc/hosts ]] && : ${(A)_etc_hosts:=${(s: :)${(ps:\t:)${${(f)~~"$(</etc/hosts)"}%%\#*}##[:blank:]#[^[:blank:]]#}}} || _etc_hosts=()
@@ -361,8 +300,6 @@ hosts=(
   localhost
 )
 zstyle ':completion:*:hosts' hosts $hosts
-# TODO: so, why is this here?
-#  zstyle '*' hosts $hosts
 
 # use generic completion system for programs not yet defined; (_gnu_generic works
 # with commands that provide a --help option with "standard" gnu-like output.)
@@ -421,9 +358,7 @@ insert-last-word-r () {
 }
 zle -N insert-last-word-r
 bindkey "\e_" insert-last-word-r
-# Not works with my insert-last-word-r
-# autoload -Uz smart-insert-last-word
-# zle -N insert-last-word smart-insert-last-word
+
 autoload -Uz copy-earlier-word
 zle -N copy-earlier-word
 bindkey '\e=' copy-earlier-word
@@ -446,6 +381,7 @@ bindkey '^Xa' _expand_alias
 bindkey '^[/' _history-complete-older
 bindkey '\e ' set-mark-command
 bindkey "\e[3~" delete-char
+
 # 用单引号引起最后一个单词
 # FIXME 如何引起光标处的单词？
 bindkey -s "^['" "^[] ^f^@^e^[\""
@@ -575,39 +511,8 @@ alias py='python3'
 alias svim="vim -i NONE"
 alias rv='EDITOR="vim --servername GVIM --remote-tab-wait"'
 alias :q="exit"
-alias girl=man
-alias woman=man
-alias 7z="7z '-xr!*~' '-xr!*.swp'"
-alias mytex=". ~/soft/context/tex/setuptex"
-(( $+commands[zhcon] )) && alias zhcon="zhcon --utf8"
-(( $+commands[luit] )) && alias gbk="luit -encoding gbk"
-(( $+commands[rlwrap] )) && {
-  (( $+commands[ilua] )) && alias ilua='rlwrap ilua'
-  (( $+commands[psh] )) && alias psh='rlwrap psh'
-}
-(( $+commands[irb] )) && alias irb='irb -r irb/completion'
-(( $+commands[ccal] )) && alias ccal='ccal -ub'
-(( $+commands[zbarcam] )) && alias zbarcam='LD_PRELOAD=/usr/lib/libv4l/v4l1compat.so zbarcam'
-(( $+commands[ghc] )) && alias ghc='ghc -i$HOME/scripts/haskell/lib'
-(( $+commands[l] )) || alias l='locate'
-(( $+commands[lre] )) || alias lre='locate -b --regex'
-(( $+commands[lrew] )) || alias lrew='locate --regex'
-(( $+commands[2to3] )) && alias py2to3="2to3 -w --no-diffs -n"
-(( $+commands[you-get] )) && alias you-getp="you-get -p mpv"
-(( $+commands[git] )) && alias gitc="git clone"
-(( $+commands[git] )) && alias git-export="git daemon --export-all --base-path= --reuseaddr --"
-(( $+commands[openssl] )) && {
-  alias showcert='openssl x509 -text -noout -in'
-  showcert_for_domain () {
-    local domain=$1
-    openssl s_client -connect $domain:443 -servername $domain <<<'' | ascii2uni -qa7
-  }
-}
-(( $+commands[trans] )) && alias trans='proxychains -q trans'
-(( $+commands[diff-so-fancy] )) && alias diff-so-fancy='diff-so-fancy | less'
 
-
-# grc aliases
+# grc aliases 
 if (( $+aliases[colourify] )); then
   # default is better
   unalias gcc g++ 2>/dev/null || true
@@ -635,12 +540,10 @@ if [[ $_has_re -eq 1 ]] && \
 fi
 
 alias nicest="nice -n19 ionice -c3"
-alias winxp="VBoxManage startvm WinXP"
-alias winxp2="VBoxManage startvm WinXP_test"
-alias dmount="udisksctl mount --block-device"
+
 # 查看进程数最多的程序
 alias topnum="ps -e|sort -k4|awk '{print \$4}'|uniq -c|sort -n|tail"
-alias xcp="rsync -aviHAXKhP --delete --exclude='*~' --exclude=__pycache__"
+
 alias nonet="HTTP_PROXY='http://localhost:1' HTTPS_PROXY='http://localhost:1' FTP_PROXY='http://localhost:1' http_proxy='http://localhost:1' https_proxy='http://localhost:1' ftp_proxy='http://localhost:1'"
 alias fromgbk="iconv -t latin1 | iconv -f gb18030"
 alias swaptop='watch -n 1 "swapview | tail -\$((\$LINES - 2)) | cut -b -\$COLUMNS"'
@@ -707,8 +610,11 @@ alias -g ANYF='**/*[^~](.)'
 autoload zargs
 autoload zmv
 
+# load functions from  $_zdir/.zsh/functions/
+source  $_zdir/.zsh/functions/* 
+
 # smart cd function, allows switching to /etc when running 'cd /etc/fstab'
-cd () {
+function cd () {
     if (( ${#argv} == 1 )) && [[ -f ${1} ]]; then
         [[ ! -e ${1:h} ]] && return 1
         print "Correcting ${1} to ${1:h}"
@@ -718,81 +624,6 @@ cd () {
     fi
 }
 
-# utility functions
-# this function checks if a command exists and returns either true
-# or false. This avoids using 'which' and 'whence', which will
-# avoid problems with aliases for which on certain weird systems. :-)
-# Usage: check_com [-c|-g] word
-#   -c  only checks for external commands
-#   -g  does the usual tests and also checks for global aliases
-function check_com () {
-    emulate -L zsh
-    local -i comonly gatoo
-    comonly=0
-    gatoo=0
-
-    if [[ $1 == '-c' ]] ; then
-        comonly=1
-        shift 1
-    elif [[ $1 == '-g' ]] ; then
-        gatoo=1
-        shift 1
-    fi
-
-    if (( ${#argv} != 1 )) ; then
-        printf 'usage: check_com [-c|-g] <command>\n' >&2
-        return 1
-    fi
-
-    if (( comonly > 0 )) ; then
-        (( ${+commands[$1]}  )) && return 0
-        return 1
-    fi
-
-    if     (( ${+commands[$1]}    )) \
-        || (( ${+functions[$1]}   )) \
-        || (( ${+aliases[$1]}     )) \
-        || (( ${+reswords[(r)$1]} )) ; then
-        return 0
-    fi
-
-    if (( gatoo > 0 )) && (( ${+galiases[$1]} )) ; then
-        return 0
-    fi
-
-    return 1
-}
-
-## complete word from currently visible Screen or Tmux buffer.
-if check_com -c screen || check_com -c tmux; then
-    function _complete_screen_display () {
-        [[ "$TERM" != "screen" ]] && return 1
-
-        local TMPFILE=$(mktemp)
-        local -U -a _screen_display_wordlist
-        trap "rm -f $TMPFILE" EXIT
-
-        # fill array with contents from screen hardcopy
-        if ((${+TMUX})); then
-            #works, but crashes tmux below version 1.4
-            #luckily tmux -V option to ask for version, was also added in 1.4
-            tmux -V &>/dev/null || return
-            tmux -q capture-pane \; save-buffer -b 0 $TMPFILE \; delete-buffer -b 0
-        else
-            screen -X hardcopy $TMPFILE
-            # screen sucks, it dumps in latin1, apparently always. so recode it
-            # to system charset
-            check_com recode && recode latin1 $TMPFILE
-        fi
-        _screen_display_wordlist=( ${(QQ)$(<$TMPFILE)} )
-        # remove PREFIX to be completed from that array
-        _screen_display_wordlist[${_screen_display_wordlist[(i)$PREFIX]}]=""
-        compadd -a _screen_display_wordlist
-    }
-    #m# k CTRL-x\,\,\,S Complete word from GNU screen buffer
-    bindkey -r "^xS"
-    compdef -k _complete_screen_display complete-word '^xS'
-fi
 
 # 变量设置 {{{1
 # re-tie fails for zsh 4
@@ -808,13 +639,11 @@ typeset -U FPATH
 
 [[ -f $_zdir/.zsh/zshrc.local ]] && source $_zdir/.zsh/zshrc.local
 
-# zsh{{{2
+# zsh {{{2
 # 提示符
 # %n --- 用户名
 # %~ --- 当前目录
 # %h --- 历史记录号
-
-
 # git 分支显示 {{{3
 
 if (( $+commands[git] )); then
@@ -1018,29 +847,16 @@ if [[ -f $_plugin ]]; then
 fi
 unset _plugin
 
-# 共用账户时的定制
-if [[ -n $ZDOTDIR ]]; then
-  export SHELL=/bin/zsh
-  [[ -f $ZDOTDIR/.tmux.conf ]] && alias tmux="tmux -f ~/lily/.tmux.conf -S ~/lily/.tmux.sock"
-  [[ -d $ZDOTDIR/bin ]] && path=($ZDOTDIR/bin $path)
-  [[ -f $ZDOTDIR/.vim/vimrc ]] && {
-    export MYVIMRC=$ZDOTDIR/.vim/vimrc
-    export VIMINIT="let &rtp='$ZDOTDIR/.vim,' . &rtp
-so $MYVIMRC"
-    export VIMTMP=$ZDOTDIR/tmpfs
-  }
-fi
 
+# precmd() will run before commands.
 precmd() {
+  # Changing Terminal Title
   echo -n -e "\033]0;$(whoami)@$(hostname):$(pwd)\007"
 }
-
 
 unset OS
 setopt nomatch
 return 0
-
-# Public link: https://github.com/lilydjwg/dotzsh
 
 # vim:fdm=marker
 

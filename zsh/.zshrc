@@ -785,6 +785,21 @@ else
     [[ $SHLVL -eq 1 ]] && echo -ne "\e[?0c"
   }
   [[ $TERM == *color* ]] && _256colors=1
+  # Set locale to English on getty
+  LANG=en_US.UTF-8
+  LC_CTYPE="en_US.UTF-8"
+  LC_NUMERIC="en_US.UTF-8"
+  LC_TIME="en_US.UTF-8"
+  LC_COLLATE="en_US.UTF-8"
+  LC_MONETARY="en_US.UTF-8"
+  LC_MESSAGES="en_US.UTF-8"
+  LC_PAPER="en_US.UTF-8"
+  LC_NAME="en_US.UTF-8"
+  LC_ADDRESS="en_US.UTF-8"
+  LC_TELEPHONE="en_US.UTF-8"
+  LC_MEASUREMENT="en_US.UTF-8"
+  LC_IDENTIFICATION="en_US.UTF-8"
+  LC_ALL=
 fi
 if [[ $OS = Linux ]]; then
   # under fbterm
@@ -792,7 +807,7 @@ if [[ $OS = Linux ]]; then
   if [[ $_has_re -eq 1 &&
     $(</proc/$PPID/cmdline) =~ '(^|/)fbterm' ]] 2>/dev/null; then
     export TERM=fbterm
-    export LANG=zh_CN.UTF-8
+    export LANG=en_US.UTF-8
     # This term is quirk. ls doesn't like it.
     # _256colors=1
   fi

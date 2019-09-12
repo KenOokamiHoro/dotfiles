@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Usage
+function usage {
+    echo "Usage: $0 -u <username> -p <password>"
+    exit 0
+}
+
+
+# Parse arguments
+while getopts u:p: option
+do
+ case "${option}"
+ in
+ u) DDDDD=${OPTARG};;
+ d) UPASS=${OPTARG};;
+  esac
+done
+
+
+if [ -z ${DDDDD+x} ] && [ -z ${UPASS+x} ]
+then
+    /usr/bin/curl -d "DDDDD=$DDDDD&upass=$UPASS&R1=0&R2=&R6=0&para=00&0MKKey=123456&v6ip=$(/sbin/ip -o -6 addr list | awk '{print $4}' | cut -d/ -f1 | grep 2001)&R7=0" -H "Content-Type: application/x-www-form-urlencoded" -X POST http://59.67.0.245/a70.html
+else
+    usage
+fi
+
+

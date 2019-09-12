@@ -1,0 +1,11 @@
+#!/usr/bin/python
+
+import datetime
+import os
+
+def move_weechat_log(day):
+    os.rename("/home/horo/.weechat/logs/freenode","/home/horo/.weechat/logs/freenode_"+day)
+
+if __name__=="__main__":
+    move_weechat_log(str(datetime.date.today()-datetime.timedelta(1)))
+

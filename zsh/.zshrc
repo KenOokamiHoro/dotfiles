@@ -11,7 +11,7 @@ SAVEHIST=10000
 ZSH_PS_HOST=$(hostname)
 
 zstyle :compinstall filename "$_zdir/.zshrc"
-fpath=($_zdir/.zsh/Completion $_zdir/.zsh/functions $fpath)
+fpath=($_zdir/.zsh/Completion $_zdir/.zsh/functions $_zdir/.zsh/config.d $fpath)
 autoload -Uz compinit
 compinit
 
@@ -27,298 +27,12 @@ zmodload zsh/regex 2>/dev/null && _has_re=1 || _has_re=0
 unsetopt nomatch
 zmodload zsh/subreap 2>/dev/null && subreap
 
-# 选项设置{{{1
-unsetopt beep
-# 自动记住已访问目录栈
-setopt auto_pushd
-# don't push the same dir twice.
-setopt pushd_ignore_dups
-setopt pushd_minus
-# 允许在交互模式中使用注释
-setopt interactive_comments
-# disown 后自动继续进程
-setopt auto_continue
-setopt extended_glob
-# 单引号中的 '' 表示一个 ' （如同 Vimscript 中者）
-setopt rc_quotes
-# 补全列表不同列可以使用不同的列宽
-setopt listpacked
-# 补全 identifier=path 形式的参数
-setopt magic_equal_subst
-# 为方便复制，右边的提示符只在最新的提示符上显示
-setopt transient_rprompt
-# setopt 的输出显示选项的开关状态
-setopt ksh_option_print
-setopt no_bg_nice
-setopt noflowcontrol
-stty -ixon # 上一行在 tmux 中不起作用
+for file in  $_zdir/.zsh/config.d/* ; do 
+    source  "$file"
+done
+# 选项设置 -> $_zdir/.zsh/config.d/00-options
 
-# 历史记录{{{2
-# 不保存重复的历史记录项
-setopt hist_save_no_dups
-setopt hist_ignore_dups
-# 在命令前添加空格，不将此命令添加到记录文件中
-setopt hist_ignore_space
-# append history list to the history file; this is the default but we make sure
-# because it's required for share_history.
-setopt append_history
-# import new commands from the history file also in other zsh-session
-setopt share_history
-# save each command's beginning timestamp and the duration to the history file
-setopt extended_history
-# If a new command line being added to the history list duplicates an older
-# one, the older command is removed from the list
-setopt histignorealldups
-# in order to use #, ~ and ^ for filename generation grep word
-# *~(*.gz|*.bz|*.bz2|*.zip|*.Z) -> searches for word not in compressed files
-# don't forget to quote '^', '~' and '#'!
-setopt extended_glob
-# display PID when suspending processes as well
-setopt longlistjobs
-# report the status of backgrounds jobs immediately
-setopt notify
-# whenever a command completion is attempted, make sure the entire command path
-# is hashed first.
-setopt hash_list_all
-# not just at the end
-setopt completeinword
-# Don't send SIGHUP to background processes when the shell exits.
-setopt nohup
-# avoid "beep"ing
-setopt nobeep
-# * shouldn't match dotfiles. ever.
-setopt noglobdots
-# use zsh style word splitting
-setopt noshwordsplit
-# don't error out when unset parameters are used
-setopt unset
-# zsh 4.3.6 doesn't have this option
-setopt hist_fcntl_lock 2>/dev/null
-if [[ $_has_re -eq 1 && 
-  ! ( $ZSH_VERSION =~ '^[0-4]\.' || $ZSH_VERSION =~ '^5\.0\.[0-4]' ) ]]; then
-  setopt hist_reduce_blanks
-else
-  # This may cause the command messed up due to a memcpy bug
-fi
-
-# 补全与 zstyle {{{1
-# 自动补全 {{{2
-# 用本用户的所有进程补全
-zstyle ':completion:*:processes' command 'ps -afu$USER'
-zstyle ':completion:*:*:*:*:processes' force-list always
-# 进程名补全
-zstyle ':completion:*:processes-names' command  'ps c -u ${USER} -o command | uniq'
-# 警告显示为红色
-zstyle ':completion:*:warnings' format $'\e[01;31m -- No Matches Found --\e[0m'
-# 描述显示为淡色
-zstyle ':completion:*:descriptions' format $'\e[2m -- %d --\e[0m'
-zstyle ':completion:*:corrections' format $'\e[01;33m -- %d (errors: %e) --\e[0m'
-# cd 补全顺序
-zstyle ':completion:*:-tilde-:*' group-order 'named-directories' 'path-directories' 'users' 'expand'
-# 在 .. 后不要回到当前目录
-zstyle ':completion:*:cd:*' ignore-parents parent pwd
-# complete manual by their section, from grml
-zstyle ':completion:*:manuals'    separate-sections true
-zstyle ':completion:*:manuals.*'  insert-sections   true
-zstyle ':completion:*' menu select
-# 分组显示
-zstyle ':completion:*' group-name ''
-# 在最后尝试使用文件名
-if [[ $ZSH_VERSION =~ '^[0-4]\.' || $ZSH_VERSION =~ '^5\.0\.[0-5]' ]]; then
-  zstyle ':completion:*' completer _complete _match _approximate _expand_alias _ignored _files
-else
-  zstyle ':completion:*' completer _complete _extensions _match _approximate _expand_alias _ignored _files
-fi
-# 修正大小写
-zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}'
-zstyle -e ':completion:*' special-dirs \
-  '[[ $PREFIX == (../)#(|.|..) ]] && reply=(..)'
-# 使用缓存。某些命令的补全很耗时的（如 aptitude）
-zstyle ':completion:*' use-cache on
-_cache_dir=${XDG_CACHE_HOME:-$HOME/.cache}/zsh
-zstyle ':completion:*' cache-path $_cache_dir
-unset _cache_dir
-# complete user-commands for git-*
-# https://pbrisbin.com/posts/deleting_git_tags_with_style/
-zstyle ':completion:*:*:git:*' user-commands ${${(M)${(k)commands}:#git-*}/git-/}
-
-# Auto complete from lilydjwg {{{2
-zstyle ':completion:*:*:pdf2png:*' file-patterns \
-  '*.pdf:pdf-files:pdf\ files *(-/):directories:directories'
-zstyle ':completion:*:*:x:*' file-patterns \
-  '*.{7z,bz2,gz,rar,tar,tbz,tgz,zip,chm,xz,exe,xpi,apk,maff,crx}:compressed-files:compressed\ files *(-/):directories:directories'
-zstyle ':completion:*:*:evince:*' file-patterns \
-  '*.{pdf,ps,eps,dvi,djvu,pdf.gz,ps.gz,dvi.gz}:documents:documents *(-/):directories:directories'
-zstyle ':completion:*:*:gbkunzip:*' file-patterns '*.zip:zip-files:zip\ files *(-/):directories:directories'
-zstyle ':completion:*:*:feh:*' file-patterns '*.{png,gif,jpg,svg}:images:images *(-/):directories:directories'
-zstyle ':completion:*:*:sxiv:*' file-patterns '*.{png,gif,jpg}:images:images *(-/):directories:directories'
-zstyle ':completion:*:*:timidity:*' file-patterns '*.mid'
-
-# Auto complete from grml-zsh-conig {{{2
-# allow one error for every three characters typed in approximate completer
-zstyle ':completion:*:approximate:'    max-errors 'reply=( $((($#PREFIX+$#SUFFIX)/3 )) numeric )'
-
-# don't complete backup files as executables
-zstyle ':completion:*:complete:-command-::commands' ignored-patterns '(aptitude-*|*\~)'
-
-# start menu completion only if it could find no unambiguous initial string
-zstyle ':completion:*:correct:*'       insert-unambiguous true
-zstyle ':completion:*:corrections'     format $'%{\e[0;31m%}%d (errors: %e)%{\e[0m%}'
-zstyle ':completion:*:correct:*'       original true
-
-# activate color-completion
-zstyle ':completion:*:default'         list-colors ${(s.:.)LS_COLORS}
-
-# format on completion
-zstyle ':completion:*:descriptions'    format $'%{\e[0;31m%}completing %B%d%b%{\e[0m%}'
-
-# insert all expansions for expand completer
-zstyle ':completion:*:expand:*'        tag-order all-expansions
-zstyle ':completion:*:history-words'   list false
-
-# activate menu
-zstyle ':completion:*:history-words'   menu yes
-
-# ignore duplicate entries
-zstyle ':completion:*:history-words'   remove-all-dups yes
-zstyle ':completion:*:history-words'   stop yes
-
-# match uppercase from lowercase
-zstyle ':completion:*'                 matcher-list 'm:{a-z}={A-Z}'
-
-# separate matches into groups
-zstyle ':completion:*:matches'         group 'yes'
-zstyle ':completion:*'                 group-name ''
-
-if [[ "$NOMENU" -eq 0 ]] ; then
-  # if there are more than 5 options allow selecting from a menu
-  zstyle ':completion:*'               menu select=5
-else
-  # don't use any menus at all
-  setopt no_auto_menu
-fi
-
-zstyle ':completion:*:messages'        format '%d'
-zstyle ':completion:*:options'         auto-description '%d'
-
-# describe options in full
-zstyle ':completion:*:options'         description 'yes'
-
-# on processes completion complete all user processes
-zstyle ':completion:*:processes'       command 'ps -au$USER'
-
-# offer indexes before parameters in subscripts
-zstyle ':completion:*:*:-subscript-:*' tag-order indexes parameters
-
-# provide verbose completion information
-zstyle ':completion:*'                 verbose true
-
-# recent (as of Dec 2007) zsh versions are able to provide descriptions
-# for commands (read: 1st word in the line) that it will list for the user
-# to choose from. The following disables that, because it's not exactly fast.
-zstyle ':completion:*:-command-:*:'    verbose false
-
-# set format for warnings
-zstyle ':completion:*:warnings'        format $'%{\e[0;31m%}No matches for:%{\e[0m%} %d'
-
-# define files to ignore for zcompile
-zstyle ':completion:*:*:zcompile:*'    ignored-patterns '(*~|*.zwc)'
-zstyle ':completion:correct:'          prompt 'correct to: %e'
-
-# Ignore completion functions for commands you don't have:
-zstyle ':completion::(^approximate*):*:functions' ignored-patterns '_*'
-
-# Provide more processes in completion of programs like killall:
-zstyle ':completion:*:processes-names' command 'ps c -u ${USER} -o command | uniq'
-
-# complete manual by their section
-zstyle ':completion:*:manuals'    separate-sections true
-zstyle ':completion:*:manuals.*'  insert-sections   true
-zstyle ':completion:*:man:*'      menu yes select
-
-# Search path for sudo completion
-zstyle ':completion:*:sudo:*' command-path /usr/local/sbin \
-                                          /usr/local/bin  \
-                                          /usr/sbin       \
-                                          /usr/bin        \
-                                          /sbin           \
-                                          /bin            \
-
-# provide .. as a completion
-zstyle ':completion:*' special-dirs ..
-
-# run rehash on completion so new installed program are found automatically:
-function _force_rehash () {
-  (( CURRENT == 1 )) && rehash
-  return 1
-}
-
-## correction
-# some people don't like the automatic correction - so run 'NOCOR=1 zsh' to deactivate it
-if [[ "$NOCOR" -gt 0 ]] ; then
-  zstyle ':completion:*' completer _oldlist _expand _force_rehash _complete _files _ignored
-  setopt nocorrect
-else
-  # try to be smart about when to use what completer...
-  setopt correct
-  zstyle -e ':completion:*' completer '
-      if [[ $_last_try != "$HISTNO$BUFFER$CURSOR" ]] ; then
-          _last_try="$HISTNO$BUFFER$CURSOR"
-          reply=(_complete _match _ignored _prefix _files)
-      else
-          if [[ $words[1] == (rm|mv) ]] ; then
-              reply=(_complete _files)
-          else
-              reply=(_oldlist _expand _force_rehash _complete _ignored _correct _approximate _files)
-          fi
-      fi'
-fi
-
-# command for process lists, the local web server details and host completion
-zstyle ':completion:*:urls' local 'www' '/var/www/' 'public_html'
-
-# Some functions, like _apt and _dpkg, are very slow. We can use a cache in
-# order to speed things up
-if [[ ${GRML_COMP_CACHING:-yes} == yes ]]; then
-  GRML_COMP_CACHE_DIR=${GRML_COMP_CACHE_DIR:-${ZDOTDIR:-$HOME}/.cache}
-  if [[ ! -d ${GRML_COMP_CACHE_DIR} ]]; then
-      command mkdir -p "${GRML_COMP_CACHE_DIR}"
-  fi
-  zstyle ':completion:*' use-cache  yes
-  zstyle ':completion:*:complete:*' cache-path "${GRML_COMP_CACHE_DIR}"
-fi
-
-# host completion {{2
-[[ -r ~/.ssh/config ]] && _ssh_config_hosts=(${${(s: :)${(ps:\t:)${${(@M)${(f)"$(<$HOME/.ssh/config)"}:#Host *}#Host }}}:#*[*?]*}) || _ssh_config_hosts=()
-[[ -r ~/.ssh/known_hosts ]] && _ssh_hosts=(${${${${(f)"$(<$HOME/.ssh/known_hosts)"}:#[\|]*}%%\ *}%%,*}) || _ssh_hosts=()
-[[ -r /etc/hosts ]] && : ${(A)_etc_hosts:=${(s: :)${(ps:\t:)${${(f)~~"$(</etc/hosts)"}%%\#*}##[:blank:]#[^[:blank:]]#}}} || _etc_hosts=()
-hosts=(
-  $(hostname)
-  "$_ssh_config_hosts[@]"
-  "$_ssh_hosts[@]"
-  "$_etc_hosts[@]"
-  localhost
-)
-zstyle ':completion:*:hosts' hosts $hosts
-
-# use generic completion system for programs not yet defined; (_gnu_generic works
-# with commands that provide a --help option with "standard" gnu-like output.)
-for compcom in cp deborphan df feh fetchipac gpasswd head hnb ipacsum mv \
-              pal stow uname ; do
-  [[ -z ${_comps[$compcom]} ]] && compdef _gnu_generic ${compcom}
-done; unset compcom
-
-# see upgrade function in this file
-compdef _hosts upgrade
-# .zfs handling {{{2
-if [[ -f /proc/self/mountinfo ]]; then
-  _get_zfs_fake_files () {
-    reply=($(awk -vOFS=: -vORS=' ' '$9 == "zfs" && $7 !~ /^master:/ { print $5, ".zfs" }' /proc/self/mountinfo))
-  }
-  zstyle -e ':completion:*' fake-files _get_zfs_fake_files
-fi
-# 接受路径中已经匹配的中间项，这将支持 .zfs 隐藏目录
-# zstyle ':completion:*' accept-exact-dirs true
+# 补全与 zstyle -> $_zdir/.zsh/config.d/01-zstyle
 
 # 命令行编辑{{{1
 bindkey -e
@@ -506,7 +220,6 @@ fi
 if [[ $OS == 'Linux' || $OS == 'FreeBSD' ]]; then
   alias grep='grep --color=auto'
 fi
-alias n='thunar'
 alias py='python3'
 alias svim="vim -i NONE"
 alias rv='EDITOR="vim --servername GVIM --remote-tab-wait"'
@@ -746,7 +459,7 @@ if (( $+commands[git] )); then
       coproc {
         _br=$(git branch --no-color 2>/dev/null)
         if [[ $? -eq 0 ]]; then
-          _current_branch=$(echo $_br|awk '$1 == "*" {print "%{\x1b[33m%} (" substr($0, 3) ")"}')
+          _current_branch=$(echo $_br|awk '$1 == "*" {print "%{\x1b[33m%}(git)-[" substr($0, 3) "]"}')
         fi
         # always gives something for reading, or _vcs_update_info won't be
         # called, fd not closed
@@ -779,7 +492,7 @@ if (( $+commands[git] )); then
 
       _br=$(git branch --no-color 2>/dev/null)
       if [[ $? -eq 0 ]]; then
-        _current_branch=$(echo $_br|awk '{if($1 == "*"){print "%{\x1b[33m%} (" substr($0, 3) ")"}}')
+        _current_branch=$(echo $_br|awk '{if($1 == "*"){print "%{\x1b[33m%}(git)-[" substr($0, 3) "]"}}')
       fi
     }
   } # }}}
@@ -893,6 +606,8 @@ if [[ $OS != *BSD ]]; then
   [[ -d $HOME/.cabal/share/man ]] && export MANPATH=:$HOME/.cabal/share/man
 elif [[ $OS = FreeBSD ]]; then
   export PAGER=less
+  # Load Archmac
+  export PATH="/opt/arch/bin:/opt/arch/sbin:$PATH"
 fi
 
 # 其它程序 {{{2

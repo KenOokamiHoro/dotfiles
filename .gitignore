@@ -1,3 +1,4 @@
 /vim/.vim/swap
 /ssh/.ssh/*
 !/ssh/.ssh/config
+.DS_Store
